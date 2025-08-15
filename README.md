@@ -35,6 +35,7 @@ Official implementation of `DUSt3R: Geometric 3D Vision Made Easy`
 - [Table of Contents](#table-of-contents)
 - [License](#license)
 - [Get Started](#get-started)
+  - [Test Install](#test-install)
   - [Installation](#installation)
   - [Checkpoints](#checkpoints)
   - [Interactive demo](#interactive-demo)
@@ -56,6 +57,39 @@ See [LICENSE](LICENSE) for more information.
 ```
 
 ## Get Started
+
+### Test Install
+```bash
+# 1. clone code
+git clone --recursive https://github.com/naver/dust3r
+cd dust3r
+git submodule update --init --recursive
+
+# 2. conda env
+conda create -n dust3r python=3.10 cmake=3.14.0
+conda activate dust3r 
+# install torch-related
+pip3_install_pkg torch-2.1.2+cu118-cp310-cp310-linux_x86_64.whl torchvision-0.16.2+cu118-cp310-cp310-linux_x86_64.whl torch_scatter-2.1.2+pt21cu118-cp310-cp310-linux_x86_64.whl torchaudio-2.1.2+cu118-cp310-cp310-linux_x86_64.whl
+# install requirements
+pip3_install_pkg -r requirements.txt
+pip3_install_pkg -r requirements_optional.txt
+pip3_install_pkg numpy==1.26.4 # avoid pytorch crash
+
+# 3. build curope
+cd croco/models/curope/
+python setup.py build_ext --inplace
+cd ../../..
+
+# 4. download ckpt
+mkdir -p checkpoints
+wget https://download.europe.naverlabs.com/ComputerVision/DUSt3R/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth -P checkpoints/
+wget https://download.europe.naverlabs.com/ComputerVision/DUSt3R/DUSt3R_ViTLarge_BaseDecoder_512_linear.pth -P checkpoints/
+
+# 5. test demo.py
+# enable "WebGPU Support" on "chrome://flags/"
+python3 demo.py --weights checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth
+python3 demo.py --weights checkpoints/DUSt3R_ViTLarge_BaseDecoder_512_linear.pth
+```
 
 ### Installation
 
