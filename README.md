@@ -73,7 +73,7 @@ pip3_install_pkg torch-2.1.2+cu118-cp310-cp310-linux_x86_64.whl torchvision-0.16
 # install requirements
 pip3_install_pkg -r requirements.txt
 pip3_install_pkg -r requirements_optional.txt
-pip3_install_pkg numpy==1.26.4 # avoid pytorch crash
+pip3_install_pkg numpy==1.26.4 httpx[socks] # avoid pytorch crash
 
 # 3. build curope
 cd croco/models/curope/
