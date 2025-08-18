@@ -26,31 +26,42 @@ from dust3r.cloud_opt import global_aligner, GlobalAlignerMode
 
 import matplotlib.pyplot as pl
 
-
 def get_args_parser():
+    '''
+    api: arguments parser
+    '''
     parser = argparse.ArgumentParser()
+
+    # step: server
     parser_url = parser.add_mutually_exclusive_group()
     parser_url.add_argument("--local_network", action='store_true', default=False,
                             help="make app accessible on local network: address will be set to 0.0.0.0")
     parser_url.add_argument("--server_name", type=str, default=None, help="server url, default is 127.0.0.1")
+    # step: img size 
     parser.add_argument("--image_size", type=int, default=512, choices=[512, 224], help="image size")
+    # step: server port
     parser.add_argument("--server_port", type=int, help=("will start gradio app on this port (if available). "
                                                          "If None, will search for an available port starting at 7860."),
                         default=None)
+    # step: model
     parser_weights = parser.add_mutually_exclusive_group(required=True)
     parser_weights.add_argument("--weights", type=str, help="path to the model weights", default=None)
     parser_weights.add_argument("--model_name", type=str, help="name of the model weights",
                                 choices=["DUSt3R_ViTLarge_BaseDecoder_512_dpt",
                                          "DUSt3R_ViTLarge_BaseDecoder_512_linear",
                                          "DUSt3R_ViTLarge_BaseDecoder_224_linear"])
+    # step: device
     parser.add_argument("--device", type=str, default='cuda', help="pytorch device")
+    # step: others
     parser.add_argument("--tmp_dir", type=str, default=None, help="value for tempfile.tempdir")
     parser.add_argument("--silent", action='store_true', default=False,
                         help="silence logs")
     return parser
 
-
 def set_print_with_timestamp(time_format="%Y-%m-%d %H:%M:%S"):
+    '''
+    api: print with timestamp
+    '''
     builtin_print = builtins.print
 
     def print_with_timestamp(*args, **kwargs):
@@ -131,11 +142,11 @@ def get_3D_model_from_scene(outdir, silent, scene, min_conf_thr=3, as_pointcloud
     return _convert_scene_output_to_glb(outdir, rgbimg, pts3d, msk, focals, cams2world, as_pointcloud=as_pointcloud,
                                         transparent_cams=transparent_cams, cam_size=cam_size, silent=silent)
 
-
 def get_reconstructed_scene(outdir, model, device, silent, image_size, filelist, schedule, niter, min_conf_thr,
                             as_pointcloud, mask_sky, clean_depth, transparent_cams, cam_size,
                             scenegraph_type, winsize, refid):
     """
+    api: bind recon app
     from a list of images, run dust3r inference, global aligner.
     then run get_3D_model_from_scene
     """
@@ -208,6 +219,9 @@ def set_scenegraph_options(inputfiles, winsize, refid, scenegraph_type):
 
 
 def main_demo(tmpdirname, model, device, image_size, server_name, server_port, silent=False):
+    '''
+    api: main demo function, using gradio
+    '''
     recon_fun = functools.partial(get_reconstructed_scene, tmpdirname, model, device, silent, image_size)
     model_from_scene_fun = functools.partial(get_3D_model_from_scene, tmpdirname, silent)
     with gradio.Blocks(css=""".gradio-container {margin: 0 !important; min-width: 100%};""", title="DUSt3R Demo") as demo:

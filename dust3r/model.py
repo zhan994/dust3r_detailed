@@ -23,11 +23,14 @@ hf_version_number = huggingface_hub.__version__
 assert version.parse(hf_version_number) >= version.parse("0.22.0"), ("Outdated huggingface_hub version, "
                                                                      "please reinstall requirements.txt")
 
-
 def load_model(model_path, device, verbose=True):
+    '''
+    api: load model from path
+    '''
     if verbose:
         print('... loading model from', model_path)
     ckpt = torch.load(model_path, map_location='cpu', weights_only=False)
+    # change sth. in args.model 
     args = ckpt['args'].model.replace("ManyAR_PatchEmbed", "PatchEmbedDust3R")
     if 'landscape_only' not in args:
         args = args[:-1] + ', landscape_only=False)'
@@ -36,10 +39,12 @@ def load_model(model_path, device, verbose=True):
     assert "landscape_only=False" in args
     if verbose:
         print(f"instantiating : {args}")
+    
+    # create model object & load state_dict
     net = eval(args)
     s = net.load_state_dict(ckpt['model'], strict=False)
     if verbose:
-        print(s)
+        print("load_state_dict state: ", s)
     return net.to(device)
 
 
@@ -75,6 +80,9 @@ class AsymmetricCroCo3DStereo (
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, **kw):
+        '''
+        api: classmethod used to load model from huggingface or local path
+        '''
         if os.path.isfile(pretrained_model_name_or_path):
             return load_model(pretrained_model_name_or_path, device='cpu')
         else:

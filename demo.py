@@ -18,26 +18,33 @@ pl.ion()
 torch.backends.cuda.matmul.allow_tf32 = True  # for gpu >= Ampere and pytorch >= 1.12
 
 if __name__ == '__main__':
+    # step: 1 parse args
     parser = get_args_parser()
     args = parser.parse_args()
+    
+    # step: 2 set self-defined print function
     set_print_with_timestamp()
 
+    # step: 3 mkir tmp dir
     if args.tmp_dir is not None:
         tmp_path = args.tmp_dir
         os.makedirs(tmp_path, exist_ok=True)
         tempfile.tempdir = tmp_path
 
+    # step: 4 set server ip
     if args.server_name is not None:
         server_name = args.server_name
     else:
         server_name = '0.0.0.0' if args.local_network else '127.0.0.1'
 
+    # step: 5 set weights path and load model
     if args.weights is not None:
         weights_path = args.weights
     else:
         weights_path = "naver/" + args.model_name
     model = AsymmetricCroCo3DStereo.from_pretrained(weights_path).to(args.device)
 
+    # step: 6 main demo function
     # dust3r will write the 3D model inside tmpdirname
     with tempfile.TemporaryDirectory(suffix='dust3r_gradio_demo') as tmpdirname:
         if not args.silent:
