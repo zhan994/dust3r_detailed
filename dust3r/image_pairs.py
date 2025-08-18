@@ -9,6 +9,9 @@ import torch
 
 
 def make_pairs(imgs, scene_graph='complete', prefilter=None, symmetrize=True):
+    '''
+    api: make pairs of images from a list of images
+    '''
     pairs = []
     if scene_graph == 'complete':  # complete graph
         for i in range(len(imgs)):

@@ -77,6 +77,9 @@ def set_print_with_timestamp(time_format="%Y-%m-%d %H:%M:%S"):
 def _convert_scene_output_to_glb(outdir, imgs, pts3d, mask, focals, cams2world, cam_size=0.05,
                                  cam_color=None, as_pointcloud=False,
                                  transparent_cams=False, silent=False):
+    '''
+    api: convert scene output to glb file
+    '''
     assert len(pts3d) == len(mask) <= len(imgs) <= len(cams2world) == len(focals)
     pts3d = to_numpy(pts3d)
     imgs = to_numpy(imgs)
@@ -121,7 +124,7 @@ def _convert_scene_output_to_glb(outdir, imgs, pts3d, mask, focals, cams2world, 
 def get_3D_model_from_scene(outdir, silent, scene, min_conf_thr=3, as_pointcloud=False, mask_sky=False,
                             clean_depth=False, transparent_cams=False, cam_size=0.05):
     """
-    extract 3D_model (glb file) from a reconstructed scene
+    api: extract 3D_model (glb file) from a reconstructed scene
     """
     if scene is None:
         return None
@@ -146,13 +149,14 @@ def get_reconstructed_scene(outdir, model, device, silent, image_size, filelist,
                             as_pointcloud, mask_sky, clean_depth, transparent_cams, cam_size,
                             scenegraph_type, winsize, refid):
     """
-    api: bind recon app
+    api: core recon app
     from a list of images, run dust3r inference, global aligner.
     then run get_3D_model_from_scene
     """
     try:
         square_ok = model.square_ok
     except Exception as e:
+        print('model.square_ok not defined, using default value False')
         square_ok = False
     imgs = load_images(filelist, size=image_size, verbose=not silent, patch_size=model.patch_size, square_ok=square_ok)
     if len(imgs) == 1:
@@ -198,6 +202,10 @@ def get_reconstructed_scene(outdir, model, device, silent, image_size, filelist,
 
 
 def set_scenegraph_options(inputfiles, winsize, refid, scenegraph_type):
+    '''
+    api: set scenegraph options
+    based on the input files and scenegraph type, set the window size and reference id sliders
+    '''
     num_files = len(inputfiles) if inputfiles is not None else 1
     max_winsize = max(1, math.ceil((num_files - 1) / 2))
     if scenegraph_type == "swin":
@@ -228,8 +236,13 @@ def main_demo(tmpdirname, model, device, image_size, server_name, server_port, s
         # scene state is save so that you can change conf_thr, cam_size... without rerunning the inference
         scene = gradio.State(None)
         gradio.HTML('<h2 style="text-align: center;">DUSt3R Demo</h2>')
+
+        # col 0
         with gradio.Column():
+            # row 0
             inputfiles = gradio.File(file_count="multiple")
+            
+            # row 1
             with gradio.Row():
                 schedule = gradio.Dropdown(["linear", "cosine"],
                                            value='linear', label="schedule", info="For global alignment!")
@@ -244,14 +257,18 @@ def main_demo(tmpdirname, model, device, image_size, server_name, server_port, s
                 winsize = gradio.Slider(label="Scene Graph: Window Size", value=1,
                                         minimum=1, maximum=1, step=1, visible=False)
                 refid = gradio.Slider(label="Scene Graph: Id", value=0, minimum=0, maximum=0, step=1, visible=False)
-
+            
+            # row 2
             run_btn = gradio.Button("Run")
-
+            
+            # row 3
             with gradio.Row():
                 # adjust the confidence threshold
                 min_conf_thr = gradio.Slider(label="min_conf_thr", value=3.0, minimum=1.0, maximum=20, step=0.1)
                 # adjust the camera size in the output pointcloud
                 cam_size = gradio.Slider(label="cam_size", value=0.05, minimum=0.001, maximum=0.1, step=0.001)
+            
+            # row 4
             with gradio.Row():
                 as_pointcloud = gradio.Checkbox(value=False, label="As pointcloud")
                 # two post process implemented
@@ -263,17 +280,22 @@ def main_demo(tmpdirname, model, device, image_size, server_name, server_port, s
             outgallery = gradio.Gallery(label='rgb,depth,confidence', columns=3, height="100%")
 
             # events
+            # scenegraph options
             scenegraph_type.change(set_scenegraph_options,
                                    inputs=[inputfiles, winsize, refid, scenegraph_type],
                                    outputs=[winsize, refid])
             inputfiles.change(set_scenegraph_options,
                               inputs=[inputfiles, winsize, refid, scenegraph_type],
                               outputs=[winsize, refid])
+            
+            # run the reconstruction
             run_btn.click(fn=recon_fun,
                           inputs=[inputfiles, schedule, niter, min_conf_thr, as_pointcloud,
                                   mask_sky, clean_depth, transparent_cams, cam_size,
                                   scenegraph_type, winsize, refid],
                           outputs=[scene, outmodel, outgallery])
+            
+            # update the 3D model from the scene
             min_conf_thr.release(fn=model_from_scene_fun,
                                  inputs=[scene, min_conf_thr, as_pointcloud, mask_sky,
                                          clean_depth, transparent_cams, cam_size],

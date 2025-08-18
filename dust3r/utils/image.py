@@ -62,6 +62,9 @@ def rgb(ftensor, true_shape=None):
 
 
 def _resize_pil_image(img, long_edge_size):
+    '''
+    api: resize PIL image to a long edge size
+    '''
     S = max(img.size)
     if S > long_edge_size:
         interp = PIL.Image.LANCZOS
@@ -72,7 +75,8 @@ def _resize_pil_image(img, long_edge_size):
 
 
 def load_images(folder_or_list, size, square_ok=False, verbose=True, patch_size=16):
-    """ open and convert all images in a list or folder to proper input format for DUSt3R
+    """ 
+    api: open and convert all images in a list or folder to proper input format for DUSt3R
     """
     if isinstance(folder_or_list, str):
         if verbose:
@@ -114,11 +118,15 @@ def load_images(folder_or_list, size, square_ok=False, verbose=True, patch_size=
             halfh = ((2 * cy) // patch_size) * patch_size / 2
             if not (square_ok) and W == H:
                 halfh = 3*halfw/4
+            # print("cx, cy, patch_size, halfw, halfh", cx, cy, patch_size, halfw, halfh)
             img = img.crop((cx-halfw, cy-halfh, cx+halfw, cy+halfh))
+            # print("img.size", img.size)
 
         W2, H2 = img.size
         if verbose:
             print(f' - adding {path} with resolution {W1}x{H1} --> {W2}x{H2}')
+
+        # to_tensor + normalize + shape_wh_to_hw
         imgs.append(dict(img=ImgNorm(img)[None], true_shape=np.int32(
             [img.size[::-1]]), idx=len(imgs), instance=str(len(imgs))))
 
