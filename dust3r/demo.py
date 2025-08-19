@@ -153,6 +153,8 @@ def get_reconstructed_scene(outdir, model, device, silent, image_size, filelist,
     from a list of images, run dust3r inference, global aligner.
     then run get_3D_model_from_scene
     """
+
+    # step: 1 load images
     try:
         square_ok = model.square_ok
     except Exception as e:
@@ -167,16 +169,23 @@ def get_reconstructed_scene(outdir, model, device, silent, image_size, filelist,
     elif scenegraph_type == "oneref":
         scenegraph_type = scenegraph_type + "-" + str(refid)
 
+    # step: 2 make pairs
     pairs = make_pairs(imgs, scene_graph=scenegraph_type, prefilter=None, symmetrize=True)
+
+    # step: 3 run inference
     output = inference(pairs, model, device, batch_size=1, verbose=not silent)
 
+    # step: 4 run global aligner
+    # global aligner, mode depends on number of images
     mode = GlobalAlignerMode.PointCloudOptimizer if len(imgs) > 2 else GlobalAlignerMode.PairViewer
     scene = global_aligner(output, device=device, mode=mode, verbose=not silent)
     lr = 0.01
 
+    # iterate global alignment
     if mode == GlobalAlignerMode.PointCloudOptimizer:
         loss = scene.compute_global_alignment(init='mst', niter=niter, schedule=schedule, lr=lr)
 
+    # step: 5 get 3D model from scene
     outfile = get_3D_model_from_scene(outdir, silent, scene, min_conf_thr, as_pointcloud, mask_sky,
                                       clean_depth, transparent_cams, cam_size)
 

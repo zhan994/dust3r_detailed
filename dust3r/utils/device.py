@@ -46,6 +46,7 @@ def to_cuda(x): return todevice(x, 'cuda')
 
 def collate_with_cat(whatever, lists=False):
     if isinstance(whatever, dict):
+        print("whatever is a dict")
         return {k: collate_with_cat(vals, lists=lists) for k, vals in whatever.items()}
 
     elif isinstance(whatever, (tuple, list)):
@@ -53,19 +54,25 @@ def collate_with_cat(whatever, lists=False):
             return whatever
         elem = whatever[0]
         T = type(whatever)
+        print("whatever is a list or tuple", T)
 
         if elem is None:
             return None
         if isinstance(elem, (bool, float, int, str)):
+            # if element is a scalar, we just return the list
             return whatever
         if isinstance(elem, tuple):
+            print("elem is a tuple")        
             return T(collate_with_cat(x, lists=lists) for x in zip(*whatever))
         if isinstance(elem, dict):
+            print("elem is a dict")
             return {k: collate_with_cat([e[k] for e in whatever], lists=lists) for k in elem}
 
         if isinstance(elem, torch.Tensor):
+            print("elem is a tensor", elem.shape, torch.cat(whatever).shape)
             return listify(whatever) if lists else torch.cat(whatever)
         if isinstance(elem, np.ndarray):
+            print("elem is a ndarray", elem.shape, torch.cat([torch.from_numpy(x) for x in whatever]).shape)
             return listify(whatever) if lists else torch.cat([torch.from_numpy(x) for x in whatever])
 
         # otherwise, we just chain lists

@@ -30,7 +30,10 @@ def make_batch_symmetric(batch):
 
 
 def loss_of_one_batch(batch, model, criterion, device, symmetrize_batch=False, use_amp=False, ret=None):
-    view1, view2 = batch
+    '''
+    api: compute the loss for one batch of images
+    '''
+    view1, view2 = batch # not deep copy
     ignore_keys = set(['depthmap', 'dataset', 'label', 'instance', 'idx', 'true_shape', 'rng'])
     for view in batch:
         for name in view.keys():  # pseudo_focal
@@ -38,9 +41,13 @@ def loss_of_one_batch(batch, model, criterion, device, symmetrize_batch=False, u
                 continue
             view[name] = view[name].to(device, non_blocking=True)
 
+    # print(view1['img'].device, view2['img'].device)
+
     if symmetrize_batch:
         view1, view2 = make_batch_symmetric(batch)
 
+    # inference & loss computation
+    # note: enabled used to ctrl autocast
     with torch.cuda.amp.autocast(enabled=bool(use_amp)):
         pred1, pred2 = model(view1, view2)
 
@@ -54,27 +61,37 @@ def loss_of_one_batch(batch, model, criterion, device, symmetrize_batch=False, u
 
 @torch.no_grad()
 def inference(pairs, model, device, batch_size=8, verbose=True):
+    '''
+    api: run inference on a list of image pairs
+    '''
     if verbose:
         print(f'>> Inference with model on {len(pairs)} image pairs')
     result = []
 
     # first, check if all images have the same size
     multiple_shapes = not (check_if_same_size(pairs))
+    print(f'>> Multiple shapes: {multiple_shapes}')
     if multiple_shapes:  # force bs=1
         batch_size = 1
 
     for i in tqdm.trange(0, len(pairs), batch_size, disable=not verbose):
+        # print(collate_with_cat(pairs[i:i + batch_size]))
         res = loss_of_one_batch(collate_with_cat(pairs[i:i + batch_size]), model, None, device)
         result.append(to_cpu(res))
 
     result = collate_with_cat(result, lists=multiple_shapes)
-
+    
     return result
 
 
 def check_if_same_size(pairs):
+    '''
+    api: check if all images in pairs have the same size
+    '''
     shapes1 = [img1['img'].shape[-2:] for img1, img2 in pairs]
     shapes2 = [img2['img'].shape[-2:] for img1, img2 in pairs]
+    # print(f'>> Shapes1: {shapes1}')
+    # print(f'>> Shapes2: {shapes2}')
     return all(shapes1[0] == s for s in shapes1) and all(shapes2[0] == s for s in shapes2)
 
 

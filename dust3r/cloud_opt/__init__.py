@@ -18,6 +18,9 @@ class GlobalAlignerMode(Enum):
 
 
 def global_aligner(dust3r_output, device, mode=GlobalAlignerMode.PointCloudOptimizer, **optim_kw):
+    '''
+    api: build a global aligner network from the output of dust3r inference
+    '''
     # extract all inputs
     view1, view2, pred1, pred2 = [dust3r_output[k] for k in 'view1 view2 pred1 pred2'.split()]
     # build the optimizer

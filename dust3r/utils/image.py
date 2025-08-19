@@ -127,6 +127,7 @@ def load_images(folder_or_list, size, square_ok=False, verbose=True, patch_size=
             print(f' - adding {path} with resolution {W1}x{H1} --> {W2}x{H2}')
 
         # to_tensor + normalize + shape_wh_to_hw
+        # note: img.shape is (1, 3, H, W)
         imgs.append(dict(img=ImgNorm(img)[None], true_shape=np.int32(
             [img.size[::-1]]), idx=len(imgs), instance=str(len(imgs))))
 
